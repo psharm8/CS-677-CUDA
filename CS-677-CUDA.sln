@@ -5,6 +5,8 @@ VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MatrixAddition", "MatrixAddition\MatrixAddition.vcxproj", "{9D380A84-BF10-4A0F-ABDB-DB6D30757329}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "VectorReduction", "VectorReduction\VectorReduction.vcxproj", "{C1E89A7E-FD94-47ED-B020-E8373E6AA3B3}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -21,6 +23,14 @@ Global
 		{9D380A84-BF10-4A0F-ABDB-DB6D30757329}.Release|x64.Build.0 = Release|x64
 		{9D380A84-BF10-4A0F-ABDB-DB6D30757329}.Release|x86.ActiveCfg = Release|Win32
 		{9D380A84-BF10-4A0F-ABDB-DB6D30757329}.Release|x86.Build.0 = Release|Win32
+		{C1E89A7E-FD94-47ED-B020-E8373E6AA3B3}.Debug|x64.ActiveCfg = Debug|x64
+		{C1E89A7E-FD94-47ED-B020-E8373E6AA3B3}.Debug|x64.Build.0 = Debug|x64
+		{C1E89A7E-FD94-47ED-B020-E8373E6AA3B3}.Debug|x86.ActiveCfg = Debug|Win32
+		{C1E89A7E-FD94-47ED-B020-E8373E6AA3B3}.Debug|x86.Build.0 = Debug|Win32
+		{C1E89A7E-FD94-47ED-B020-E8373E6AA3B3}.Release|x64.ActiveCfg = Release|x64
+		{C1E89A7E-FD94-47ED-B020-E8373E6AA3B3}.Release|x64.Build.0 = Release|x64
+		{C1E89A7E-FD94-47ED-B020-E8373E6AA3B3}.Release|x86.ActiveCfg = Release|Win32
+		{C1E89A7E-FD94-47ED-B020-E8373E6AA3B3}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
