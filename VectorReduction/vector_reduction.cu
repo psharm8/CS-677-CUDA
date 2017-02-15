@@ -50,6 +50,7 @@
 #include "vector_reduction_kernel.cu"
 #include <fstream>
 #include <string>
+#include "vector_reduction_gold.cpp"
 
 // For simplicity, just to get the idea in this MP, we're fixing the problem size to 512 elements.
 #define NUM_ELEMENTS 512

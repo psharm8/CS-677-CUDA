@@ -25,9 +25,6 @@
   <ItemGroup>
     <CudaCompile Include="vector_reduction.cu" />
   </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="vector_reduction_gold.cpp" />
-  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{C1E89A7E-FD94-47ED-B020-E8373E6AA3B3}</ProjectGuid>
     <RootNamespace>VectorReduction</RootNamespace>
