@@ -178,13 +178,14 @@ nocutReadFilef( const char* filename, float** data, unsigned int* len, bool verb
             }
 #endif
         }
+		printf("%4.2f(%%) of bytes mismatched (count=%d) (maxErr=%f)\n", (float)error_count * 100 / (float)len, error_count, maxErr);
 
         if (threshold == 0.0f) {
             return (result) ? true : false;
         } else {
-            if (error_count) {
+            /*if (error_count) {
                 printf("%4.2f(%%) of bytes mismatched (count=%d) (maxErr=%f)\n", (float)error_count*100/(float)len, error_count,maxErr);
-            }
+            }*/
 
             return (len*threshold > error_count) ? true : false;
         }

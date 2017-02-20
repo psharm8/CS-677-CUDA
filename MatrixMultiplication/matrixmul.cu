@@ -65,7 +65,6 @@ void FreeMatrix(Matrix* M);
 
 void MatrixMulOnDevice(const Matrix M, const Matrix N, Matrix P);
 
-
 ////////////////////////////////////////////////////////////////////////////////
 // Program main
 ////////////////////////////////////////////////////////////////////////////////
@@ -119,7 +118,7 @@ int main(int argc, char** argv) {
 	printf("CPU computation complete\n");
     // in this case check if the result is equivalent to the expected soluion
     bool res = nocutComparefe(reference.elements, P.elements, 
-									P.height*P.width, 0.003f);
+									P.height*P.width, EPSILON);
     printf("Test %s\n", (1 == res) ? "PASSED" : "FAILED");
     
     if(argc == 5)
@@ -130,8 +129,8 @@ int main(int argc, char** argv) {
 	{
 	    WriteFile(P, argv[1]);
 	}   
-	WriteFile(reference, "ref.txt");
-	WriteFile(P, "cuda.txt");
+	/*WriteFile(reference, "ref.txt");
+	WriteFile(P, "cuda.txt");*/
 	// Free matrices
     FreeMatrix(&M);
     FreeMatrix(&N);
@@ -156,7 +155,7 @@ void MatrixMulOnDevice(const Matrix M, const Matrix N, Matrix P)
     CopyToDeviceMatrix(Pd, P); // Clear memory
 
 	// Setup the execution configuration
-	dim3 blockSize(32, 32);
+	dim3 blockSize(TILE_WIDTH, TILE_WIDTH);
 	dim3 gridSize((int)ceil((float)P.width / blockSize.x), (int)ceil((float)P.height / blockSize.y));
     // Launch the device computation threads!
 	MatrixMulKernel<<<gridSize, blockSize>>>(Md, Nd, Pd);
@@ -250,5 +249,5 @@ int ReadFile(Matrix* M, char* file_name)
 void WriteFile(Matrix M, char* file_name)
 {
     nocutWriteFilef(file_name, M.elements, M.height, M.width,
-                       0.0001f);
+                       EPSILON);
 }

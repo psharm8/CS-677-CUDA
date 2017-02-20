@@ -58,18 +58,16 @@
 
 __global__ void MatrixMulKernel(Matrix M, Matrix N, Matrix P)
 {
-	__shared__ float Mds[1024];
-	__shared__ float Nds[1024];
+	__shared__ float Mds[TILE_WIDTH*TILE_WIDTH];
+	__shared__ float Nds[TILE_WIDTH*TILE_WIDTH];
 	
-	int bx = blockIdx.x; int by = blockIdx.y;
 	int tx = threadIdx.x; int ty = threadIdx.y;
 
-	int Row = by * blockDim.y + ty;
-	int Col = bx * blockDim.x + tx;
-
-	int numTiles = (int)ceil((float)M.width / blockDim.x);
-	float Pvalue = 0;
-	for (int m = 0; m < numTiles; ++m)
+	int Row = blockIdx.y * blockDim.y + ty;
+	int Col = blockIdx.x * blockDim.x + tx;
+	
+	double Pvalue = 0;
+	for (int m = 0; m < (int)ceil((float)M.width / blockDim.x); ++m)
 	{
 		int mk = (m*blockDim.x + tx);
 		if (mk < M.width && Row < P.height)
@@ -93,7 +91,7 @@ __global__ void MatrixMulKernel(Matrix M, Matrix N, Matrix P)
 
 		for (int k = 0; k < blockDim.x; ++k)
 		{
-			Pvalue += Mds[ty*blockDim.x + k] * Nds[k*blockDim.x + tx];
+			Pvalue += (double)Mds[ty*blockDim.x + k] * (double)Nds[k*blockDim.x + tx];
 		}
 		__syncthreads();
 	}

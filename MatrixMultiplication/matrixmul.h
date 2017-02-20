@@ -36,6 +36,8 @@
 #ifndef _MATRIXMUL_H_
 #define _MATRIXMUL_H_
 
+#define TILE_WIDTH 16
+#define EPSILON 0.0001
 
 // Matrix Structure declaration
 typedef struct {
