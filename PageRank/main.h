@@ -6,7 +6,7 @@ const char TOEKNS[3] = ": ";
 const int INT_SIZE = sizeof(int);
 #define DECAY 0.85f
 
-typedef struct
+typedef struct Data
 {
 	int* indices;
 	int* adj;

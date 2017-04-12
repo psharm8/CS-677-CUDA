@@ -33,22 +33,26 @@ float computeMaxRankDiff(float* output1, float* output2, int size);
 void read_from_file(const char *fname, Data &data);
 void read_data(const char* path, int node_count, Data &data);
 void compute_cpu(Data &data);
-Data allocate_on_device(const Data h_data);
-void compute_gpu(const Data h_data);
+void allocate_on_device(Data &d_data, Data &h_data);
+void compute_gpu(Data h_data);
 
 int main(int argc, char** argv)
 {
 	int numNodes = 5716808;
+	//int numNodes = 5;
 	char* path = "C:\\Users\\only2\\links-simple-pairs\\";
+	//char* path = "D:\\sample-data\\";
 	Data data;
+	cout << "=============== FILES ===============" << endl;
 	read_data(path, numNodes, data);
-	//compute_cpu(data);
+	cout << "===============  CPU  ===============" << endl;	
+	compute_cpu(data);
+	cout << "===============  GPU  ===============" << endl;
 	compute_gpu(data);
 }
 
-Data allocate_on_device(const Data h_data)
-{
-	Data d_data = h_data;
+void allocate_on_device(Data &d_data, Data &h_data)
+{	
 	cudaMalloc((void**)&d_data.indices, h_data.node_count*sizeof(int));
 	cudaMalloc((void**)&d_data.adj, h_data.adj_length * sizeof(int));
 	cudaMalloc((void**)&d_data.out_degrees, h_data.node_count * sizeof(int));
@@ -57,47 +61,113 @@ Data allocate_on_device(const Data h_data)
 	cudaMemcpy(d_data.out_degrees, h_data.out_degrees, h_data.node_count * sizeof(int), cudaMemcpyHostToDevice);
 	d_data.adj_length = h_data.adj_length;
 	d_data.node_count = h_data.node_count;
-	return d_data;
 }
-void compute_gpu(const Data h_data)
+void compute_gpu(Data h_data)
 {
-	chrono::time_point<chrono::steady_clock> compute_start = chrono::high_resolution_clock::now();
-	Data d_data = allocate_on_device(h_data);
+	
+	chrono::time_point<chrono::steady_clock> start = chrono::high_resolution_clock::now();
+	/*Data d_data;
+	allocate_on_device(d_data, h_data);*/
+
+	int* indices;
+	int* adj;
+	int* out_degrees;
+	cudaMalloc((void**)&indices, h_data.node_count * sizeof(int));
+	cudaMalloc((void**)&adj, h_data.adj_length * sizeof(int));
+	cudaMalloc((void**)&out_degrees, h_data.node_count * sizeof(int));
+	cudaMemcpy(indices, h_data.indices, h_data.node_count * sizeof(int), cudaMemcpyHostToDevice);
+	cudaMemcpy(adj, h_data.adj, h_data.adj_length * sizeof(int), cudaMemcpyHostToDevice);
+	cudaMemcpy(out_degrees, h_data.out_degrees, h_data.node_count * sizeof(int), cudaMemcpyHostToDevice);
+	
 	int threads = 1024;
 	int blocks = ceil((float)h_data.node_count / threads);
+	cout << "GPU: " << "Nodes: " << h_data.node_count<<endl;
+	cout << "GPU: " << "Threads: " << threads << endl;
+	cout << "GPU: " << "Blocks: " << blocks << endl;
 	float* d_interim1;
 	float* d_interim2;
+	float* d_diff;
+	float* h_diff=(float*)malloc(blocks * sizeof(float));
+	
+	cudaMalloc((void**)&d_diff, h_data.node_count * sizeof(float));
+	
 	cudaMalloc((void**)&d_interim1, h_data.node_count * sizeof(float));
-	cudaMemset(d_interim1, 1, d_data.node_count);
+	float* tmp = (float*)malloc(h_data.node_count * sizeof(float));
+	fill(tmp, tmp + h_data.node_count, 1.f);
+	cudaMemcpy(d_interim1, tmp, h_data.node_count * sizeof(float), cudaMemcpyHostToDevice);
+	free(tmp);
+	
 	cudaMalloc((void**)&d_interim2, h_data.node_count * sizeof(float));
-	cudaMemset(d_interim2, 0, d_data.node_count);
+	cudaMemset(d_interim2, 0, h_data.node_count);
 
-	chrono::time_point<chrono::steady_clock> start = chrono::high_resolution_clock::now();
-	compute<<<blocks, threads>>>(d_data, d_interim1, d_interim2);
+	int i = 0;
+	float elapsed = 0;
+	float diff = 10000;
+	cudaEvent_t start_event, stop_event;
+	while (diff >= 30)
+	{
+		cout << "GPU: " << "Compute Ranks Pass: " << i + 1 << endl;
+		cudaEventCreate(&start_event);
+		cudaEventCreate(&stop_event);
+		if (i % 2 == 0) {
+			cudaEventRecord(start_event, 0);
+			compute << <blocks, threads >> >(indices, adj, out_degrees, h_data.node_count, h_data.adj_length, d_interim1, d_interim2);
+			cudaEventRecord(stop_event, 0);
+			cudaEventSynchronize(stop_event);
+			cudaEventElapsedTime(&elapsed, start_event, stop_event);
+			cout << "GPU: " << "Pass " << i + 1 << " took: " << elapsed << " milliseconds" << endl;
+		}
+		else
+		{
+			cudaEventRecord(start_event, 0);
+			compute << <blocks, threads >> >(indices, adj, out_degrees, h_data.node_count, h_data.adj_length, d_interim2, d_interim1);
+			cudaEventRecord(stop_event, 0);
+			cudaEventSynchronize(stop_event);
+			cudaEventElapsedTime(&elapsed, start_event, stop_event);
+			cout << "GPU: " << "Pass " << i + 1 << " took: " << elapsed << " milliseconds" << endl;
+		}
+		if(i%3==0)
+		{
+			cout << "GPU: " << "Compute Rank Diff of Passes: " << i << " and " << i + 1 << endl;
+			cudaEventRecord(start_event, 0);			
+			max_abs_diff<<<blocks, threads, threads * sizeof(float)>>>(d_diff, d_interim1, d_interim2, h_data.node_count);
+			//abs_diff<<<blocks,threads>>>(d_diff, d_interim1, d_interim2, h_data.node_count);		
+			//cudaMemcpy(h_diff, d_diff, h_data.node_count * sizeof(float), cudaMemcpyDeviceToHost);
+			//diff_max<<<blocks, threads, threads * sizeof(float)>>>(d_diff, h_data.node_count);
+			cudaMemcpy(h_diff, d_diff, blocks * sizeof(float), cudaMemcpyDeviceToHost);
+			float max_diff = 0;
+			// Max among every block's max
+			for(int j=0;j<blocks;j++)
+			{
+				max_diff = fmaxf(max_diff, h_diff[j]);
+			}
+			diff = max_diff;
+			cudaEventRecord(stop_event, 0);
+			cudaEventSynchronize(stop_event);
+			cudaEventElapsedTime(&elapsed, start_event, stop_event);
+			cout << "GPU: " << "Difference updates to: " << diff << endl;
+			cout << "GPU: " << "Diff took: "<< elapsed << " milliseconds" << endl;
+		}
+		if(i%2==0)
+		{
+			cudaMemset(d_interim1, 0.f, h_data.node_count * sizeof(float));
+		}
+		else
+		{
+			cudaMemset(d_interim2, 0.f, h_data.node_count * sizeof(float));
+		}
+		cudaEventDestroy(start_event);
+		cudaEventDestroy(stop_event);
+		i++;
+	}
+
 	cudaDeviceSynchronize();
-	chrono::time_point<chrono::steady_clock> end = chrono::high_resolution_clock::now();	
-	cout << "Pass " << 1 << " took: " << chrono::duration_cast<chrono::milliseconds>(end - start).count() << " milliseconds" << endl;
 	
-	cudaMemset(d_interim1, 0, d_data.node_count);
-
-	start = chrono::high_resolution_clock::now();
-	compute << <blocks, threads >> >(d_data, d_interim2, d_interim1);
-	cudaDeviceSynchronize();
-	end = chrono::high_resolution_clock::now();
-	cout << "Pass " << 2 << " took: " << chrono::duration_cast<chrono::milliseconds>(end - start).count() << " milliseconds" << endl;
+	chrono::time_point<chrono::steady_clock> end = chrono::high_resolution_clock::now();
 	
-	cudaMemset(d_interim2, 0, d_data.node_count);
-
-	start = chrono::high_resolution_clock::now();
-	compute << <blocks, threads >> >(d_data, d_interim1, d_interim2);
-	cudaDeviceSynchronize();
-	
-	end = chrono::high_resolution_clock::now();
-	cout << "Pass " << 3 << " took: " << chrono::duration_cast<chrono::milliseconds>(end - start).count() << " milliseconds" << endl;
-
-	
-	cout << "GPU Compute took: " << chrono::duration_cast<chrono::milliseconds>(end - compute_start).count() << " milliseconds" << endl;
+	cout << "GPU: "<<"Compute took: " << chrono::duration_cast<chrono::milliseconds>(end - start).count() << " milliseconds" << endl;
 }
+
 void compute_cpu(Data &data)
 {
 	chrono::time_point<chrono::steady_clock> compute_start = chrono::high_resolution_clock::now();
