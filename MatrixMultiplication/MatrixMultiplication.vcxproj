@@ -19,15 +19,11 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <Text Include="data.txt" />
-    <Text Include="HW2.1_readme.txt" />
-  </ItemGroup>
-  <ItemGroup>
-    <CudaCompile Include="vector_reduction.cu" />
+    <CudaCompile Include="matrixmul.cu" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{C1E89A7E-FD94-47ED-B020-E8373E6AA3B3}</ProjectGuid>
-    <RootNamespace>VectorReduction</RootNamespace>
+    <ProjectGuid>{B7B998EC-2407-4B4B-9E84-AE4368C2F6BD}</ProjectGuid>
+    <RootNamespace>MatrixMultiplication</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
